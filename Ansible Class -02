@@ -3,3 +3,370 @@ Ansible Class -02
 
 TOPIC: ANSIBLE VARIABLES, COPY, USRE, GROUP, FILE SERVICE & MODULES
 ======================================================================
+
+
+we are writing the playbook with assigning a variables
+=========================================================
+
+
+vim pranayplaybook.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  vars:
+    - abc: "git"
+    - xyz: "maven"
+
+  tasks:
+    - name: i am installing an scm tool on dev env
+      yum: name={{abc}} state=present
+      
+    - name: i am installing a build tool
+      yum: name={{xyz}} state=present
+
+:wq
+
+ansible-playbook pranayplaybook.yml------------> command to execute the playbook
+
+[root@MASTER ~]# ansible-playbook pranayplaybookfile.yml 
+[DEPRECATION WARNING]: Specifying a list of dictionaries for vars is deprecated in favor of specifying a dictionary. This feature will be removed in version 2.18. 
+Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.5.199 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.5.199]
+
+TASK [i am installing an scm tool on dev env] *************************************************************************************************************************
+changed: [172.31.5.199]
+
+TASK [i am installing a build tool] ***********************************************************************************************************************************
+changed: [172.31.5.199]
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.5.199               : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@MASTER ~]# 
+
+
+we can able to pass variables dynamically like below
+
+If we forgot to give assign values to a variables we can use to pass the variables dynamically like below
+
+vim pranayplaybook.yml
+
+---
+- hosts: ops
+  connection: ssh
+
+  tasks:
+    - name: i am installing an scm tool on dev env
+      yum: name={{abc}} state=present
+
+    - name: i am installing a build tool
+      yum: name={{xyz}} state=present
+
+
+:wq
+
+ansible-playbook pranayplaybook.yml --extra-vars="xyz=git abc=maven"------------> command to pass variables dynamically
+
+[root@MASTER ~]# ansible-playbook pranayplaybookfile.yml --extra-vars="xyz=git abc=maven"
+[DEPRECATION WARNING]: Specifying a list of dictionaries for vars is deprecated in favor of specifying a dictionary. This feature will be removed in version 2.18. 
+Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+
+PLAY [ops] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.9.237 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.9.237]
+
+TASK [i am installing an scm tool on dev env] *************************************************************************************************************************
+changed: [172.31.9.237]
+
+TASK [i am installing a build tool] ***********************************************************************************************************************************
+changed: [172.31.9.237]
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.9.237               : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@MASTER ~]#
+
+TOPIC: Alternative way to install package instead of using yum we will use command or action 
+===============================================================================================
+
+vim pranayplaybookfile.yml
+
+---
+- hosts: ops
+  connection: ssh
+
+
+  tasks:
+    - name: i am installing an scm tool on dev env
+      action: yum name=git state=present
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml-------------> command to execute ansible playbook file
+
+By using playbook how to create a file on any server like slave servers we will write playbook like below
+============================================================================================================
+
+vim pranayplaybookfile.yml
+
+---
+- hosts: all
+  connection: ssh
+  
+  tasks:
+    - name: create a file
+      file: path="/root/flm.txt" state=touch
+      
+    - name: create another file
+      file:
+        path: "/root/jenkinsfile"
+        state: touch
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml-----------> command to execute ansible playbook file
+
+[root@MASTER ~]# vim pranayplaybookfile.yml 
+[root@MASTER ~]# ansible-playbook pranayplaybookfile.yml 
+
+PLAY [all] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.9.237 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.9.237]
+[WARNING]: Platform linux on host 172.31.5.199 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.5.199]
+
+TASK [create a file] **************************************************************************************************************************************************
+changed: [172.31.9.237]
+changed: [172.31.5.199]
+
+TASK [create another file] ********************************************************************************************************************************************
+changed: [172.31.5.199]
+changed: [172.31.9.237]
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.5.199               : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.9.237               : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@MASTER ~]# 
+
+[root@SLAVE-1 ~]# ll
+total 0
+-rw-r--r--. 1 root root 0 Mar  3 08:37 flm.txt
+-rw-r--r--. 1 root root 0 Mar  3 08:37 jenkinsfile
+[root@SLAVE-1 ~]#
+
+
+
+By using the same above playbook we will write how to create a folder
+=========================================================================
+
+vim pranayplaybookfile.yml
+
+---
+- hosts: all
+  connection: ssh
+
+  tasks:
+    - name: create a folder
+      file:
+        path: "/root/DevOps"
+        state: directory
+
+:wq
+
+[root@MASTER ~]# ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+Now i want to create a user in a specific server
+=====================================================
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  connection: ssh
+
+  tasks:
+    - name: create a user
+      user: name=pranay state=present
+      
+    - name: create a another user
+      user:
+        name: babu
+        state: present
+
+
+:wq
+
+[root@MASTER ~]# ansible-playbook pranayplaybookfile.yml 
+
+
+This below playbook is one way to create a user
+====================================================
+
+tasks:
+    - name: create a user
+      user: name=pranay state=present
+
+This below playbook is alternative  way to create a user
+============================================================
+
+
+ tasks:     
+    - name: create a another user
+      user:
+        name: babu
+        state: present
+
+:wq
+
+[root@SLAVE-1 ~]# id pranay------------------> command to check created users
+uid=1001(pranay) gid=1001(pranay) groups=1001(pranay)
+[root@SLAVE-1 ~]# id babu------------------> command to check created users
+uid=1002(babu) gid=1002(babu) groups=1002(babu)
+[root@SLAVE-1 ~]# 
+
+
+Now i wnat to create multiple useres
+========================================
+
+we can use loops to create multiple users
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  connection: ssh
+
+  tasks:
+    - name: create a user
+      user: name={{item}} state=present          item(with_items)----------> it is an default varaible in ansible
+      with_items:
+        - user1
+        - user2
+        - user3
+        - user4
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+[root@SLAVE-1 ~]# getent passwd---------------> command to use check list of users
+
+
+Now i want to create groups means 
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  connection: ssh
+
+  tasks:
+    - name: create a group
+      group: name={{item}} state=present
+      with_items:
+        - grp1
+        - grp2
+        - grp3
+        - grp4
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+Now i want to create a sepecific path 
+=========================================
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  connection: ssh
+
+  tasks:
+    - name: create a file inside a folder
+      file:
+        path:
+          path: "/root/DevOps/Dockerfile"
+          state: touch
+
+:wq
+
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+Now I want to change owners of the file and permissions, to change user name, to chnage group name
+=========================================================================================================
+
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Create Devops directory
+      file:
+        path: /root/Devops
+        state: directory
+
+    - name: Create file inside folder
+      file:
+        path: /root/Devops/myfile
+        state: touch
+        owner: pranay
+        group: babu
+        mode: '0777'
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+Ansible-playbook to create a file inside a folder
+=======================================================
+
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: all
+  become: yes
+  connection: ssh
+
+  tasks:
+    - name: Create Devops directory
+      file:
+        path: /root/Devops
+        state: directory
+
+    - name: Create file inside folder
+      file:
+        path: /root/Devops/myfile
+        state: touch
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+
