@@ -369,4 +369,56 @@ vim pranayplaybookfile.yml
 ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
 
 
+TOPIC: FOR WEB SERVER WE WILL USE HTTPD(MEANS Apache), NGINX, IIS(used for windows OS)
+============================================================================================
+
+we will learn how to install web servers like httpd manually and through Playbook as well
+
+
+yum install httpd -y -------------------> command to install httpd
+
+systemctl restart httpd -----------> command to restart httpd
+systemctl status httpd -----------> command to check the status of httpd
+
+Now i have pleanty of servers need to install httpd through playbook
+=======================================================================
+
+vim pranayplaybookfile 
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: install webserver
+      yum: name=httpd state=present
+
+    - name: start webserver
+      service: name=httpd state: started
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
+
+
+copy the public IP and paste in new tab to access httpd web server
+
+TOPIC: HOW TO COPY Files from one server to another server
+================================================================
+
+vim pranayplaybookfile.yml 
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks: dev
+     - name: copy a file
+       copy: 
+       src: "/root/webserver.yml"
+       dest: "/opt"
+
+:wq
+
+ansible-playbook pranayplaybookfile.yml -----------> command to execute ansible playbook file
 
