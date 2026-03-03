@@ -3,3 +3,357 @@ Ansible Class -01
 TOPIC: ANSIBLE INTRODUCTION, ARCHITECTURE MASTER-SLAVE CONNECTION & PLAYBOOK
 =================================================================================
 
+
+We will use configuration management tool called as Ansible
+
+Ansible alternate tools are chef, puppet most commonly companies used Ansible only
+
+First we need to know the Ansible Architecture
+
+Launch an EC2-Instance--------> no.of Instance:04---->1.Ansible Mster 2.Slave(Dev-server) 3.Slave(Test-server) 4.Slave(Prod-server)--------> instance 
+type:t3.micro-------> with keypair-----> MySecuritygrp------> 8gb ebs -----> ok
+
+Launch and connect 4 Instances
+
+do all configuration in all 4 servers like below
+
+hostnamectl set-hostname "ANSIBLE-MASTER"
+hostnamectl set-hostname "DEV-SERVER"
+hostnamectl set-hostname "TEST-SERVER"
+hostnamectl set-hostname "PROD-SERVER"
+
+First install Ansible on Ansible server
+
+yum install ansible -y------------------> command to install Ansible tool
+
+Ansible dependencies is Python and related to Python PIP(PIP means Python Install Package Module)
+
+yum install python-pip -y---------------> command to install python-pip
+
+As of now we done are launched 4 servers, Installed Ansible and dependencies python & python-pip on Ansible server
+
+Now we need to do configuration on rest of the 3 servers are like below
+
+1. need to set password for root user
+2. need to do authenticate password update
+3. need to restart sshd
+
+need to do those 3 above steps on rest of 3 servers
+
+passwd root
+give password here
+
+[root@DEV-SERVER ~]# passwd root
+Changing password for user root.
+New password: 
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@DEV-SERVER ~]# 
+
+need to update password authentication
+
+for this there will be a specific path is
+
+vi /etc/ssh/sshd_config
+
+in this file go to line no:65
+
+put like this below
+
+PasswordAuthentication yes
+
+again  go to line no:40 
+
+here do remove # hashtag and made changes like below
+
+PermitRootLogin yes
+
+now do restart sshd
+
+systemctl restart sshd--------------------> command to restart sshd
+
+[root@DEV-SERVER ~]# passwd root
+Changing password for user root.
+New password: 
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@DEV-SERVER ~]# vi /etc/ssh/sshd_config
+[root@DEV-SERVER ~]# systemctl restart sshd
+
+do same all aboe 3 configurations in rest of 2 servers as well
+
+Now need to generate key in Ansible server to connect all 3 servers to Master server like below
+
+[root@ANSIBLE-MASTER ~]# ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa
+Your public key has been saved in /root/.ssh/id_rsa.pub
+The key fingerprint is:
+SHA256:Db/ukeE4MGmY0krlDqfAHDQFesal41YXKGccY/BIkXM root@ANSIBLE-MASTER
+The key's randomart image is:
++---[RSA 3072]----+
+| +**=o.          |
+|oo=*E. .         |
+|..B*+ . .        |
+|o+.* + . +       |
+|.o* * = S +      |
+| + B . o o +     |
+|  o .   o =      |
+|         o .     |
+|         .o      |
++----[SHA256]-----+
+[root@ANSIBLE-MASTER ~]#
+
+
+[root@ANSIBLE-MASTER ~]# ll .ssh
+total 12
+-rw-------. 1 root root  563 Mar  3 05:23 authorized_keys
+-rw-------. 1 root root 2610 Mar  3 05:52 id_rsa
+-rw-r--r--. 1 root root  573 Mar  3 05:52 id_rsa.pub------>this public key will not present on remaining servers
+[root@ANSIBLE-MASTER ~]#
+
+need to get that public Ips in remaing servers also we need to do copy like below
+
+need to do on Ansible Master server
+
+ssh-copy-id root@172.31.6.47(dev-server of private IP)
+
+and password should be enter dev-server
+
+[root@ANSIBLE-MASTER ~]# ssh-copy-id root@172.31.6.47
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+The authenticity of host '172.31.6.47 (172.31.6.47)' can't be established.
+ED25519 key fingerprint is SHA256:Yi23++3ZYOJ4v3IGz+5tUty8ZjMx+939OGXna0OkTUE.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@172.31.6.47's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'root@172.31.6.47'"
+and check to make sure that only the key(s) you wanted were added.
+
+
+[root@ANSIBLE-MASTER ~]# ssh root@172.31.6.47
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+[root@DEV-SERVER ~]# 
+
+Now successfully logged into a DEV-SERVER On Ansible-Master server through ssh-keygen
+
+Now do the same steps to add remaining 2 servers on Ansible-master server as well like below
+
+[root@ANSIBLE-MASTER ~]# ssh-copy-id root@172.31.15.179
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+The authenticity of host '172.31.15.179 (172.31.15.179)' can't be established.
+ED25519 key fingerprint is SHA256:7dhi6oYRA3fes8PwvOYZJSF04kJkmF+KLuk8PDojleQ.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@172.31.15.179's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'root@172.31.15.179'"
+and check to make sure that only the key(s) you wanted were added.
+
+[root@ANSIBLE-MASTER ~]# ssh root@172.31.15.179
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+[root@TEST-SERVER ~]# 
+
+
+[root@TEST-SERVER ~]# exit
+logout
+Connection to 172.31.15.179 closed.
+[root@ANSIBLE-MASTER ~]# 
+
+
+[root@ANSIBLE-MASTER ~]# ssh-copy-id root@172.31.15.179
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+[root@ANSIBLE-MASTER ~]# ssh-copy-id root@172.31.10.65
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+The authenticity of host '172.31.10.65 (172.31.10.65)' can't be established.
+ED25519 key fingerprint is SHA256:XoCNcQIRL45LhA2J54j+8uWTOVp51xAs4hGTMdsK0dM.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@172.31.10.65's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'root@172.31.10.65'"
+and check to make sure that only the key(s) you wanted were added.
+
+[root@ANSIBLE-MASTER ~]# ssh root@172.31.10.65
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+[root@PROD-SERVER ~]# exit
+logout
+Connection to 172.31.10.65 closed.
+[root@ANSIBLE-MASTER ~]# 
+
+
+As of now all servers are connected to Ansible-Master server through ssh-keygen
+
+Now we need to add Inventory
+
+Inventory means --------> need to create groups and give servers IPs on that groups like below
+
+First go to Ansible Default path like below
+
+cd /etc/ansible/---------------> command to go to  on Ansible Default path on Ansible-Master server
+
+[root@ANSIBLE-MASTER ~]# cd /etc/ansible/
+[root@ANSIBLE-MASTER ansible]# ll
+total 0
+drwxr-xr-x. 2 root root 6 Mar 24  2025 roles
+[root@ANSIBLE-MASTER ansible]# vim hosts
+[root@ANSIBLE-MASTER ansible]# 
+
+vim hosts
+
+[dev]
+172.31.6.47
+
+[test]
+172.31.15.179
+
+[prod]
+172.31.10.65
+
+:wq
+
+Now we need to know it is connecte dto Ansible or not
+
+go to root directory
+
+Now we need to know Our Ansible-Master server is connected to all 3 slae servers or not
+
+the command is like below
+
+ansible all -m ping---------------> command to know Ansible-Master server is connected to slave servers or not
+
+
+[root@ANSIBLE-MASTER ~]# ansible all -m ping----------------> command to know Ansible-Master server is connected to slave servers or not
+[WARNING]: Platform linux on host 172.31.15.179 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python
+interpreter could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more
+information.
+172.31.15.179 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host 172.31.6.47 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.6.47 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host 172.31.10.65 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.10.65 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[root@ANSIBLE-MASTER ~]# 
+
+
+I want to see specific particular slave server means folloing command below
+
+ansible dev -m ping
+
+ansible test -m ping
+
+ansible dev,prod -m ping
+
+Now we will start sriting Ansible Playbooks
+
+Ansible Playbook consists of 3 sections
+
+1.Traget section--------> means in which server we need to do
+2.tasks section --------> means need to install/uninstall or update
+3.variable section -----> means need to be store variables
+
+we need to use for saving the ansible playbook with extension yml or yaml
+
+yet another markup language
+
+every yaml file starts with --- & ends with ...
+
+installpresent
+uninstall=absent
+update=latest
+start=started
+stop=stopped
+restart=restarted
+
+[root@ANSIBLE-MASTER ~]# vim myfirstplaybook.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  task:
+    - name: i am installing git on dev env
+      yum: name=git state=present
+... 
+
+:wq 
+
+[root@ANSIBLE-MASTER ~]# vim myfirstplaybook.yml 
+[root@ANSIBLE-MASTER ~]# ansible-playbook myfirstplaybook.yml
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.6.47 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.6.47]
+
+TASK [i am installing git on dev env] *********************************************************************************************************************************
+changed: [172.31.6.47]
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.6.47                : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@ANSIBLE-MASTER ~]# 
