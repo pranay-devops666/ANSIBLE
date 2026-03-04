@@ -1,0 +1,334 @@
+Ansible Class -03
+
+TOPIC: WEB SERVER & APP SERVER INSTALLATION, CONDITIONS, TAGS & VAULT
+=========================================================================
+
+
+Now requirement is need to install one web server, need to be restart that web server and need to deploy a small application in it
+=======================================================================================================================================
+
+For web server there will be a default path
+
+the path is /var/www/html--------> in this path we need to keep the code as index.html need to create this file
+
+when we done installed a webserver then automatically one default path will come as /var/www/html/index.html
+
+vim webserver.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  tasks:
+    - name: install webserevr
+      yum: name=httpd state=present
+      
+    - name: start webserver
+      service: name=httpd state=started172.31.2.84
+
+:wq
+
+dont execute the above file wait
+
+vim webserver.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  tasks:
+    - name: install webserevr
+      yum: name=httpd state=present
+      
+    - name: start webserver
+      service: name=httpd state=started           
+      
+    - name: create a index file
+      file:
+        path: "/var/www/html/index.html"
+        state: touch
+        
+    - name: add some content in that index file
+      copy:
+        dest: "/var/www/html/index.html"
+        content: |
+          <h1>welcome to Ansible class</h1>
+          <h2>This is webserver playbook</h2>
+
+:wq
+
+ansible-playbook webserver.yml-------------> command to execute webserver
+
+In Interview repeated questions are
+=======================================
+
+1. For suppose I have 2 slave servers with in these 2 slave servers we need to install web servers write a playbook for this, but the tricky is here
+one slave server is have amazon-linux and another salve server is ubuntu server
+
+in amazon-linux we will do install httpd
+for in ubuntu-linux we will do install apache2
+
+how to reolve this to write playbook is based on the Operating System we will do use CONDITONS
+
+and also WHEN condition as well
+
+Redhat or amazon-linux is same
+
+when condiction
+==================
+
+slave-------> os --------> RedHat----> httpd
+slave-------> OS --------> Ubuntu ----> apache2
+
+start writing playbook for this
+
+vim condtions.yml
+
+---
+- hosts: ops
+  connection: ssh
+
+  tasks:
+    - name: install webserver on RedHat
+      yum: name=httpd state=present
+      when: ansible_os_family=="RedHat"
+
+    - name: install webserver on Ubuntu
+      apt: name=apache2 state=present
+      when: ansible_os_family=="Ubuntu"
+
+:wq
+
+ansible-playbook conditions.yml-----------> command to execute the file
+
+[root@MASTER ~]# cat /etc/os-release----------------> command to know on which OS our slave server is working
+NAME="Amazon Linux"
+VERSION="2023"
+ID="amzn"
+ID_LIKE="fedora"
+VERSION_ID="2023"
+PLATFORM_ID="platform:al2023"
+PRETTY_NAME="Amazon Linux 2023.10.20260216"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"
+HOME_URL="https://aws.amazon.com/linux/amazon-linux-2023/"
+DOCUMENTATION_URL="https://docs.aws.amazon.com/linux/"
+SUPPORT_URL="https://aws.amazon.com/premiumsupport/"
+BUG_REPORT_URL="https://github.com/amazonlinux/amazon-linux-2023"
+VENDOR_NAME="AWS"
+VENDOR_URL="https://aws.amazon.com/"
+SUPPORT_END="2029-06-30"
+[root@MASTER ~]# 
+
+
+Another most repeatededly question in Interview
+===================================================
+
+Q. For suppose i  have 10 tasks now i wnat to execute all these 10 tasks means i will give command as ansible-playbook filename
+But in these 10 tasks need to be execute only 9 tasks and 1 task should not be execute how can you do that
+
+for this situation we will use TAGS
+=======================================
+
+vim babu.yml
+
+----
+- hosts: dev
+  connection: ssh
+
+  tasks:
+     - name: install scm tool
+       yum: name=git state=present
+
+     - name: install java17
+       yum: name=java-17-amazon-corretto state=present
+
+     - name: install maven
+       yum: name=maven state=present
+
+     - name: install httpd
+       yum: name=httpd state=present
+
+:wq
+
+Now for the above playbook i need to be skip maven installation for that we will use tags like below
+                                                                                    ============
+
+vim babu.yml
+
+----
+- hosts: dev
+  connection: ssh
+
+  tasks:
+     - name: install scm tool
+       yum: name=git state=present
+
+     - name: install java17
+       yum: name=java-17-amazon-corretto state=present
+
+     - name: install maven
+       yum: name=maven state=present
+       tags: buildtool(give tagname here)
+
+     - name: install httpd
+       yum: name=httpd state=present
+
+:wq
+
+ansible-playbook babu.yml --skip-tags=buildtool--------------> command to execute playbook and using tags to skip a particular task in yaml playbook file
+
+
+For suppose if we want to skip multiple tasks means 
+=======================================================
+
+vim bbau.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  tasks:
+    - name: install scm tool
+      yum: name=git state=present
+      
+    - name: install jav17
+      yum: name=java-17-amazon-corretto state=present
+      tags: java
+      
+    - name: install maven
+      yum: name=maven state=present
+      
+    - name: install httpd
+      yum: name=httpd state=present
+
+:wq
+
+ansible-playbook babu.yml --skip-tags="buildtool, java"------------> command to execute playbook and using tags to skip a particular task in yaml playbook file
+
+For suppose scenario vice-versa case
+
+ex: if i have 10 tasks i want to execute 9 tasks as remaining 1 task should need to be skip
+
+vim bbau.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  tasks:
+    - name: install scm tool
+      yum: name=git state=present
+      
+    - name: install jav17
+      yum: name=java-17-amazon-corretto state=present
+      
+    - name: install maven
+      yum: name=maven state=present
+      tags: buildtool
+      
+    - name: install httpd
+      yum: name=httpd state=present
+
+:wq
+
+ansible-playbook babu.yml --tags=buildtool------------> command to execute playbook and using tags to execute a particular task only ans remaining should be skip 
+
+within 10 tasks need to be execute a particular one task and rest of 9 should be skip we will use above playbook
+
+
+HOW TO INSTALL APPLICATION SERVER
+==================================
+
+Task is need to be install TOMCAT on all servers like multiple
+
+how we do is we will get the script for having steps to install tomcat and will execute here
+
+we can execute the script what steps are there to be install Tomcat and get that script on slave server execute it
+
+vim tomcat.sh
+
+yum install java-17-amazon-corretto -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz
+tar -zxvf apache-tomcat-9.0.115.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.115/bin/startup.sh
+
+:wq
+
+first we need to be install web server like Tomcat this script should be present in slae server
+
+we need to copy this vim.tomcat file scripy by using copy module
+
+vim appserver.yml
+
+---
+- hosts: dev
+  connection: ssh
+  
+  tasks:
+    - name: copy the script
+      copy:
+        src: "/root/tomcat.sh"
+        dest: "/root"
+        mode: '0777'
+        
+    - name: run the script
+      shell: nohup /root/tomcat.sh
+
+:wq
+
+ansible-playbook appserver.yml-----------> command to execute the playbook file
+
+
+TOPIC: ANSIBLE VAULT
+========================
+
+IF i want to encrypt the data it means to hide the data like keeping password for it
+
+[root@ANSIBLE-MASTER ~]# ansible-vault encrypt tomcat.sh ---------------> command to keep the file encrypt
+New Vault password: 
+Confirm New Vault password: 
+Encryption successful
+[root@ANSIBLE-MASTER ~]#
+
+[root@ANSIBLE-MASTER ~]# ansible-vault view tomcat.sh -----------> command to view ansible-encrypted data in a file
+Vault password: 
+yum install java-17-amazon-corretto -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz
+tar -zxvf apache-tomcat-9.0.115.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.115/bin/startup.sh
+[root@ANSIBLE-MASTER ~]# 
+
+[root@ANSIBLE-MASTER ~]# ansible-vault rekey tomcat.sh ---------> command to rename the password, change password
+Vault password: -----> enter here old password
+New Vault password: -----> enter here new password
+Confirm New Vault password: -----> enter here new password
+Rekey successful
+[root@ANSIBLE-MASTER ~]#
+
+
+As of now we encrypted existing file only
+
+But we need to encrypt for a newly creating new file like below
+
+[root@ANSIBLE-MASTER ~]# ansible-vault create pranay ------------> command to create a encrypt the data while creating a new file
+New Vault password: 
+Confirm New Vault password: 
+[root@ANSIBLE-MASTER ~]#
+
+
+
