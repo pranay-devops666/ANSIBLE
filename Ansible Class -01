@@ -242,6 +242,8 @@ drwxr-xr-x. 2 root root 6 Mar 24  2025 roles
 [root@ANSIBLE-MASTER ansible]# vim hosts
 [root@ANSIBLE-MASTER ansible]# 
 
+[root@ANSIBLE-MASTER ~]# vi /etc/ansible/hosts
+
 vim hosts
 
 [dev]
