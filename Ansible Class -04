@@ -1,7 +1,7 @@
 Ansible Class -04
 
-TOPIC: BY USING PYTHON LIST METHOD
-==================================
+TOPIC: BY USING PYTHON LIST METHOD, ROLES IN ANSIBLE, ANSIBLE DEBUG MODULES, ANSIBLE MODULES
+===============================================================================================
 
 Topic: By using python list method we will easily find random slave servers status on master server
 
@@ -172,7 +172,209 @@ vim main.yml
 7 directories, 4 files
 
 
+BY USING ANSIBLE DEBUG MODULES WE CAN ABLE TO VIEW GIT OR OTHER TOOLS ARE INSTALLED OR SLAVE SERVER TO VIEW ON MASTER SERVER
+================================================================================================================================
+
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - debug:
+        msg: "we are using ansible concepts"
+
+:wq
+
+[root@ANSIBLE-MASTER ~]# vim debug.yml
+[root@ANSIBLE-MASTER ~]# ansible-playbook debug.yml 
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.8.98]
+
+TASK [debug] **********************************************************************************************************************************************************
+ok: [172.31.8.98] => {
+    "msg": "we are using ansible concepts"
+}
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.8.98                : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
+
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - debug:
+        msg: "The Dev Server OS is {{ansible_os_family}}"
+
+:wq
+
+ansible-playbook debug.yml 
 
 
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: check the git version
+      command: git --version
+      registry: abc
+      
+    - debug:
+        msg: "The scm tool is {{abc.stdout}}"
+
+:wq
+
+
+ansible-playbook debug.yml---------------> command to execute playbook file
+
+
+[root@ANSIBLE-MASTER ~]# ansible-playbook debug.yml 
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.8.98]
+
+TASK [check the git version] ******************************************************************************************************************************************
+changed: [172.31.8.98]
+
+TASK [debug] **********************************************************************************************************************************************************
+ok: [172.31.8.98] => {
+    "msg": "The scm tool is git version 2.50.1"
+}
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.8.98                : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: install scm tool
+      yum: name=git state=present
+
+    - name: check the git version
+      command: git --version
+      register: abc
+
+    - debug:
+        msg: "The scm tool is {{ abc.stdout }}"
+
+:wq
+
+ansible-playbook debug.yml---------------> command to execute playbook
+
+[root@ANSIBLE-MASTER ~]# ansible-playbook debug.yml 
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.8.98]
+
+TASK [install scm tool] ***********************************************************************************************************************************************
+ok: [172.31.8.98]
+
+TASK [check the git version] ******************************************************************************************************************************************
+changed: [172.31.8.98]
+
+TASK [debug] **********************************************************************************************************************************************************
+ok: [172.31.8.98] => {
+    "msg": "The scm tool is git version 2.50.1"
+}
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.8.98                : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+To know the complete details of user by using debug
+========================================================
+
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: check the user details
+      command: id flm
+      register: abc
+
+    - debug:
+        msg: "The user details are {{ abc.stdout }}"
+
+:wq
+ansible-playbook debug.yml-----------> command to execute playbook
+
+vim debug.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: check the user details
+      command: id flm
+      register: abc
+      ignore_errors: yes
+
+    - debug:
+        msg: "The user details are {{ abc.stdout }}"
+
+:wq
+
+ansible-playbook debug.yml----------->
+
+ANSIBLE MODULES
+=================
+
+ansible dev -m yum -a "pkg=tree state=present"-------------> command to install a tool by using ansible modeule in a single command no need to use playbook
+
+ansible all -m copy -a "src=debug.yml dest=/opt"----------> command to copy in by using copy module in ansible module
+
+
+
+ansible all -m command -a "ls /opt"-------------> command to know for the above command copy file worked or not
+
+[root@ANSIBLE-MASTER ~]# ansible dev -m command -a "df -h"----------------> command to know cpu information
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.8.98 | CHANGED | rc=0 >>
+Filesystem        Size  Used Avail Use% Mounted on
+devtmpfs          4.0M     0  4.0M   0% /dev
+tmpfs             459M     0  459M   0% /dev/shm
+tmpfs             184M  444K  183M   1% /run
+/dev/nvme0n1p1     10G  2.1G  7.9G  21% /
+tmpfs             459M   96K  459M   1% /tmp
+/dev/nvme0n1p128   10M  1.3M  8.7M  13% /boot/efi
+tmpfs              92M     0   92M   0% /run/user/1000
+tmpfs              92M     0   92M   0% /run/user/0
+
+[root@ANSIBLE-MASTER ~]# ansible dev -m command -a "free -m"-------------> command to know memory information
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.8.98 | CHANGED | rc=0 >>
+               total        used        free      shared  buff/cache   available
+Mem:             916         201         462           0         253         579
 
 
