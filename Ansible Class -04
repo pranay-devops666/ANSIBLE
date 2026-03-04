@@ -1,0 +1,178 @@
+Ansible Class -04
+
+TOPIC: BY USING PYTHON LIST METHOD
+==================================
+
+Topic: By using python list method we will easily find random slave servers status on master server
+
+Task is to know and find the 1st 3 servers or last 3 servers in a particulary group like Inventory groups we will use python list method & following commands below
+
+
+[root@ANSIBLE-MASTER ~]# ansible all[0] -m ping-----------> command to know the first server in a group
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.8.98 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[root@ANSIBLE-MASTER ~]#
+
+ansible all[1] -m ping-----------> command to know the second server in a group
+
+
+
+vim playbook.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: install pip on dev server
+      yum: name=python-pip state=present
+
+    - name: install a boto module on dev group
+      pip: name=boto state=present----------> here pip is a module name
+
+:wq
+
+
+[root@ANSIBLE-MASTER ~]# ansible-playbook playbook.yml 
+
+PLAY [dev] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.8.98 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
+could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.8.98]
+
+TASK [install pip on dev server] **************************************************************************************************************************************
+changed: [172.31.8.98]
+
+TASK [install a boto module on dev group] *****************************************************************************************************************************
+changed: [172.31.8.98]
+
+PLAY RECAP ************************************************************************************************************************************************************
+172.31.8.98                : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@ANSIBLE-MASTER ~]# vim playbook.yml
+[root@ANSIBLE-MASTER ~]# 
+
+
+Task is I want to deploy an Application by maintaining a folder structure
+1. install web server
+2. start web server
+
+if the above tasks are got successfully executed means after that handler should be work
+
+
+vim playbook.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  tasks:
+    - name: install pip on dev server
+      yum: name=python-pip state=present
+      notify: start webserver
+      
+  handlers:
+    - name: start webserver
+      service: name=httpd state=restarted
+
+:wq
+
+ansible-playbook playbook.yml 
+
+TOPIC: ROLES IN ANSIBLE
+===========================
+
+vim main.yml
+
+---
+- hosts: dev
+  connection: ssh
+
+  roles:
+    - pranay
+    - babu
+    - devops
+    - aws
+
+:wq
+
+in above what the names roles we given in playbook should be a folders with that names
+
+first we need to create one folder for roles-------> in that roles folder we need to create sub folders with roles name like 4 roles mkdir pranay babu devops aws---
+-------> first go to 1st folder pranay role folder----> cd pranay/-------> in this pranay folder need to create task folder with name task-----> mkdir task----->
+-------> in this task folder we need to create yaml file as main.yml file---------> cd tasks/----> vim main.yml-------> in here we need to write ansible playbook
+--------> 
+
+[root@ANSIBLE-MASTER ~]# mkdir roles-----------> first create one folder for roles
+[root@ANSIBLE-MASTER ~]# ll
+total 0
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 roles
+[root@ANSIBLE-MASTER ~]# cd roles/-------> go to created roles folder
+[root@ANSIBLE-MASTER roles]# ll
+total 0
+[root@ANSIBLE-MASTER roles]# mkdir pranay babu devops aws---------> again create roles folders for 4 roles here
+[root@ANSIBLE-MASTER roles]# ll
+total 0
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 aws
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 babu
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 devops
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 pranay
+[root@ANSIBLE-MASTER roles]# cd pranay/--------> now go to first role folder
+[root@ANSIBLE-MASTER pranay]# mkdir tasks----------> create one tasks folder 
+[root@ANSIBLE-MASTER pranay]# ll
+total 0
+drwxr-xr-x. 2 root root 6 Mar  4 08:54 tasks
+[root@ANSIBLE-MASTER pranay]# cd tasks/----------> go to that created tasks folder
+[root@ANSIBLE-MASTER tasks]# ll
+total 0
+[root@ANSIBLE-MASTER tasks]# vim main.yml-------> in here tasks folder need to create yaml main.yml file to write ansible playbook
+[root@ANSIBLE-MASTER tasks]# pwd
+/root/roles/pranay/tasks
+[root@ANSIBLE-MASTER tasks]# cd ../..
+
+In here vim main.yml pranay role will write ansible playbook wha the task has been assigned to him like below
+
+vim main.yml
+
+- name: install webserver
+  connection: ssh
+
+- name: start webserver
+  service: name=httpd state=restarted
+
+:wq
+
+[root@ANSIBLE-MASTER tasks]# pwd-------> command to know present working directory
+/root/roles/pranay/tasks
+[root@ANSIBLE-MASTER tasks]# cd ../..----------> go to previous folder
+
+[root@ANSIBLE-MASTER ~]# tree
+.
+├── main.yml
+└── roles
+    ├── babu
+    │   └── tasks
+    │       └── main.yml
+    ├── devops
+    │   └── tasks
+    │       └── main.yml
+    └── pranay
+        └── tasks
+            └── main.yml
+
+7 directories, 4 files
+
+
+
+
+
+
